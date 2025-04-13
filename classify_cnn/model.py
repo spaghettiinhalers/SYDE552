@@ -13,53 +13,87 @@ test_loader = torch.utils.data.DataLoader(torch.utils.data.Subset(mnist, np.aran
                                           batch_size=1000, shuffle=True)
 
 class Net(nn.Module):
-    def __init__(self, p_smallest=0.0, p_random=0.0):
+    def __init__(self, p_smallest=0.0, p_block=0.0, p_reflect=0.0, p_filter=0.0):
         super(Net, self).__init__()
 
+        # p_block + p_reflect + p_filter <= 1
         self.p_smallest = p_smallest
-        self.p_random = p_random
-        # 2 convolutional layers + 1 fully connected layer
-        self.conv1 = nn.Conv2d(1, 32, kernel_size=5)  # set the size of the convolution to 5x5, and have 12 of them
+        self.p_block = p_block
+        self.p_reflect = p_reflect
+        self.p_filter = p_filter
+
+        # 2 convolutional layers + 1 fully connected layer (maia et al)
+        self.conv1 = nn.Conv2d(1, 32, kernel_size=5)
         self.conv2 = nn.Conv2d(32, 64, kernel_size=5)
         self.fc1 = nn.Linear(1024, 10)
 
     def forward(self, x):
-        x = F.relu(F.max_pool2d(self.conv1(x), 2))  # make sure to do max pooling after the convolution layers
+        x = F.relu(F.max_pool2d(self.conv1(x), 2))  # max pool after conv layers
         x = F.relu(F.max_pool2d(self.conv2(x), 2))
         x = x.view(-1, 1024)
         x = self.fc1(x)
         return F.log_softmax(x, dim=1)
     
-    def damage_smallest(self):
+    def damage_smallest(self): # connections are blocked to simulate nonuse of connections
         def do_damage_smallest(param, p):
             with torch.no_grad():
-                # Flatten weights and compute absolute magnitude
                 flat = param.view(-1)
                 num_to_zero = int(len(flat) * p)
 
                 if num_to_zero == 0:
-                    return  # Skip if p is too small
+                    return  # skip for speed
 
-                # Get indices of the smallest weights
-                _, idx = torch.topk(flat.abs(), num_to_zero, largest=False)
-
-                # Zero them out
-                flat[idx] = 0.0
+                # get indices of smallest weights
+                _, indices = torch.topk(flat.abs(), num_to_zero, largest=False)
+                flat[indices] = 0.0
 
         for module in self.modules():
             if isinstance(module, (nn.Conv2d, nn.Linear)):
                 do_damage_smallest(module.weight, self.p_smallest)
     
-    def damage_random(self):
-        def do_damage_random(param, p):
+    def damage_fas(self):
+        def do_damage_fas(param, p_block, p_reflect, p_filter):
+            if p_block + p_reflect + p_filter > 1:
+                raise ValueError("percentages for fas damage types must not exceed 100%")
+
             with torch.no_grad():
-                mask = (torch.rand_like(param) > p).float()
-                param.mul_(mask)
+                flat = param.view(-1)
+
+                nonzero_indices = (flat!=0).nonzero(as_tuple=True)[0]
+                num_nonzero_indices = nonzero_indices.numel()
+
+                # percentage of weights damaged will be taken from the number of nonzero weights
+                # simulated fas damage occurs after energy constraint blockage
+                num_block = int(num_nonzero_indices * p_block)
+                num_reflect = int(num_nonzero_indices * p_reflect)
+                num_filter = int(num_nonzero_indices * p_filter)
+
+                shuffled_indices = nonzero_indices[torch.randperm(num_nonzero_indices)]
+
+                indices_block = shuffled_indices[:num_block]
+                indices_reflect = shuffled_indices[num_block:num_block+num_reflect]
+                indices_filter = shuffled_indices[num_block+num_reflect:num_block+num_reflect+num_filter]
+
+                # low pass filter stuff (maia et al)
+                weights_to_filter = flat[indices_filter]                # get weights before transformation
+                signs = weights_to_filter.sign()                        # get signs of weights
+                high_weight = torch.quantile(flat.abs(), 0.95)          # get high_weight, should be in the 95th percentile for all weights
+                normalized_weights = weights_to_filter / high_weight    # scale weights to mostly between -1 and 1
+                x = normalized_weights
+                gaussian_noise = np.sqrt(0.05) * np.random.randn(len(x),)
+                transformed_weights = -0.2774 * x**2 + 0.9094 * x - 0.0192 + gaussian_noise
+                filtered_weights = transformed_weights * signs * high_weight # rescale
+
+                # do damage
+                flat[indices_block] = 0.0                  # blockage: set weights to 0
+                flat[indices_reflect] *= 0.5               # reflection: halve weights
+                flat[indices_filter] = filtered_weights    # filter: low pass filter stuff - see above
 
         for name, module in self.named_modules():
             if isinstance(module, (nn.Conv2d, nn.Linear)):
                 if hasattr(module, 'weight'):
-                    do_damage_random(module.weight, self.p_random) # apply damage only to connection weights, and not bias weights
+                    do_damage_fas(module.weight, self.p_block, self.p_reflect, self.p_smallest) # apply damage only to connection weights, and not bias weights
+
 
 
 
@@ -84,7 +118,7 @@ for percentage in percentages:
             network.train()      # configure the network for training
             for k in range(10):  # train the network 10 times
                 correct = 0
-                for data, target in train_loader:       # working in batchs of 1000
+                for data, target in train_loader:
                     optimizer.zero_grad()               # initialize the learning system
                     output = network(data)              # feed in the data 
                     loss = F.nll_loss(output, target)   # compute how wrong the output is
@@ -103,7 +137,7 @@ for percentage in percentages:
             output = network(data)                               # feed in the data
             pred = output.data.max(1, keepdim=True)[1]           # compute which output is largest
             correct += pred.eq(target.data.view_as(pred)).sum()  # compute the number of correct outputs
-        # update the list of testing accuracy values
+
         score = float(correct/len(test_loader.dataset))
 
         testing_accuracies.append(score)
