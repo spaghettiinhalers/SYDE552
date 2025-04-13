@@ -22,7 +22,7 @@ class Net(nn.Module):
         self.p_reflect = p_reflect
         self.p_filter = p_filter
 
-        # 2 convolutional layers + 1 fully connected layer (maia et al)
+        # 2 convolutional layers + 1 fully connected layer (lusch et al)
         self.conv1 = nn.Conv2d(1, 32, kernel_size=5)
         self.conv2 = nn.Conv2d(32, 64, kernel_size=5)
         self.fc1 = nn.Linear(1024, 10)
@@ -74,7 +74,7 @@ class Net(nn.Module):
                 indices_reflect = shuffled_indices[num_block:num_block+num_reflect]
                 indices_filter = shuffled_indices[num_block+num_reflect:num_block+num_reflect+num_filter]
 
-                # low pass filter stuff (maia et al)
+                # low pass filter stuff (lusch et al)
                 weights_to_filter = flat[indices_filter]                # get weights before transformation
                 signs = weights_to_filter.sign()                        # get signs of weights
                 high_weight = torch.quantile(flat.abs(), 0.95)          # get high_weight, should be in the 95th percentile for all weights
