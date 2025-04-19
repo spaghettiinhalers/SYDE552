@@ -34,7 +34,9 @@ def draw_stroke_sequence(sequence, save_path=None, show=True):
     plt.axis('off')
     plt.axis('equal')
     
-datas = [[] for _ in range(10)]
+
+datas = []
+actual = []
 
 for i in range(10000):
     try:
@@ -48,36 +50,24 @@ for i in range(10000):
     outputStrokes[:, 0] = outputStrokes[:, 0]/28
     outputStrokes[:, 1] = outputStrokes[:, 1]/28
     
-    datas[getNumFromOneHot(inputOneshot)].append(outputStrokes)
-    
-    
-input_data = []
-images = []
-
-for i in range(10):
-    temp_onehot = np.zeros(10)
-    temp_onehot[i] = 1
-    
-    smallest_10 = sorted(datas[i], key=len)[:100]
-    for k in smallest_10:
-        input_data.append(temp_onehot)
-        images.append(k)
+    actual.append(getNumFromOneHot(inputOneshot))
+    datas.append((i, outputStrokes))
 
 # Storage for accepted and rejected images
 accepted = []
 rejected = []
 
 # Iterator index
-index = 0
+index = 548
 
 
 def on_key(event):
     global index
     
     if event.key.lower() == 'y':
-        accepted.append(images[index])
+        accepted.append(datas[index][0])
     elif event.key.lower() == 'n':
-        rejected.append(images[index])
+        rejected.append(datas[index][0])
     else:
         print("Press 'y' for yes, 'n' for no.")
         return
@@ -85,9 +75,9 @@ def on_key(event):
     index += 1
     plt.clf()
 
-    if index < len(images):
-        draw_stroke_sequence(images[index])
-        plt.title(f"Image {index+1}/{len(images)} — Press Y (yes) or N (no)")
+    if index < len(datas):
+        draw_stroke_sequence(datas[index][1])
+        plt.title(f"Image {index+1}/{len(datas)} — Press Y (yes) or N (no) Number: {actual[index]}")
         plt.draw()
     else:
         print("Done reviewing images!")
@@ -96,6 +86,8 @@ def on_key(event):
 # Show the first image
 fig = plt.figure()
 fig.canvas.mpl_connect('key_press_event', on_key)
-draw_stroke_sequence(images[index])
-plt.title(f"Image {index+1}/{len(images)} — Press Y (yes) or N (no)")
+draw_stroke_sequence(datas[index][1])
+plt.title(f"Image {index+1}/{len(datas)} — Press Y (yes) or N (no) {actual[index]}")
 plt.show()
+
+print(accepted)
