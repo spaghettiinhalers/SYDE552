@@ -426,7 +426,7 @@ for model_version in ['1', '2', '3', '4', '5']:
     tts_reflect = []
     ccs_filter = []
     tts_filter = []
-    for i in range(5):
+    for i in range(1):
         print("repeataf", i)
         if model_version == '1': version = 1
         if model_version == '2': version = 2
