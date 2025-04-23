@@ -448,7 +448,7 @@ for model_version in ['1', '2', '3', '4', '5']:
         damage_smallest(model, 0.1) # base energy constraint
 
         # blockage
-        for p in [i / 100 for i in range(101)]:
+        for p in [i / 100 for i in range(0, 101, 5)]:
             copy_model = copy.deepcopy(model)
             damage_fas(copy_model, p, 0.0, 0.0)
 
@@ -457,7 +457,7 @@ for model_version in ['1', '2', '3', '4', '5']:
             block_times.append(time)
 
         # reflect
-        for p in [i / 100 for i in range(101)]:
+        for p in [i / 100 for i in range(0, 101, 5)]:
             copy_model = copy.deepcopy(model)
             damage_fas(copy_model, 0.0, p, 0.0)
 
@@ -466,7 +466,7 @@ for model_version in ['1', '2', '3', '4', '5']:
             reflect_times.append(time)
 
         # filter
-        for p in [i / 100 for i in range(101)]:
+        for p in [i / 100 for i in range(0, 101, 5)]:
             copy_model = copy.deepcopy(model)
             damage_fas(copy_model, 0.0, 0.0, p)
 

@@ -435,7 +435,7 @@ for model_version in ['1', '2', '3', '4', '5']:
         model.load_state_dict(torch.load(model_path, map_location=torch.device('cpu')))
         model.eval()
 
-        for p in [i / 100 for i in range(101)]:
+        for p in [i / 100 for i in range(0, 101, 5)]:
             copy_model = copy.deepcopy(model)
             damage_smallest(copy_model, p)
 
@@ -456,6 +456,6 @@ print(ts)
 
 # cs contains 5 arrays, 1 for each model_weights version
 # each version of THAT rray contains 10 arrays, since we are simulating the exact same thing on each rnn 10 times
-# each of THAT array contains 100 elements, for p = 0.00, 0.01, 0.02, 0.03, ..., 1.00
+# each of THAT array contains 100 elements, for p = 0.00, 0.05, 0.10, 0.15, ..., 1.00
 # cs is for confidence aka how good the output is
 # ts is for time
