@@ -242,8 +242,10 @@ def generate_text(model, number):
     output[..., 2:] = (torch.sigmoid(output[..., -1, 2:]) > 0.5).float()
 
     outputs.append(output[:, -1, :].detach().cpu().numpy()[0])
+    time = 0
 
     for i in range(62-1):
+        time += 1
         output, hidden = model(output, hidden=hidden)
         output[..., 2:] = (torch.sigmoid(output[..., -1, 2:]) > 0.5).float()
         outputs.append(output[:, -1, :].detach().cpu().numpy()[0])
@@ -253,7 +255,7 @@ def generate_text(model, number):
             # print("HI")
             break
     
-    return draw_stroke_sequence(outputs)
+    return draw_stroke_sequence(outputs), time
 
 def draw_stroke_sequence(sequence):
     """
