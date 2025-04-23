@@ -426,7 +426,7 @@ for model_version in ['1', '2', '3', '4', '5']:
     tts_reflect = []
     ccs_filter = []
     tts_filter = []
-    for i in range(10):
+    for i in range(5):
         print("repeataf", i)
         if model_version == '1': version = 1
         if model_version == '2': version = 2
@@ -450,7 +450,7 @@ for model_version in ['1', '2', '3', '4', '5']:
         damage_smallest(model, 0.1) # base energy constraint
 
         # blockage
-        for p in [i / 100 for i in range(0, 101, 5)]:
+        for p in [i / 100 for i in range(0, 101, 10)]:
             copy_model = copy.deepcopy(model)
             damage_fas(copy_model, p, 0.0, 0.0)
 
