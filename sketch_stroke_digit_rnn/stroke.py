@@ -402,7 +402,7 @@ def test_model(model, model_version):
         times = []
 
         for digit in range(10):
-            drawing, time = generate_text(model, digit), time
+            drawing, time = generate_text(model, digit)
             predicted_class, confidence = evaluate_img(cnnEvaluator, drawing, display=False)
             # print(f'Predicted Class: {predicted_class}')
             # print(f'Confidence of desired_digit = {confidence[digit]}')
