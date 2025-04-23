@@ -99,7 +99,7 @@ class Net(nn.Module):
 
 # FIND OPTIMAL SPARSIFICATION PARAMETER FOR ENERGY CONSTRAINT SIMULATION
 
-percentages = np.arange(0, 1.001, 0.001)
+percentages = np.arange(0, 1.01, 0.01)
 accuracies = []
 
 for percentage in percentages:
@@ -152,6 +152,7 @@ for percentage in percentages:
 maxima = []
 for i in range(1, len(accuracies) - 1):
     if accuracies[i] > accuracies[i-1] and accuracies[i] > accuracies[i+1]: maxima.append((percentages[i], accuracies[i]))
+print("MAXIMA!!!!")
 print(maxima)
 
 plt.figure(figsize=(8, 5))
@@ -160,3 +161,4 @@ plt.xlabel('percentage of smallest weights damaged')
 plt.ylabel('mean testing accuracy')
 plt.grid(True)
 plt.show()
+print("ACCURACIES!!!!")
