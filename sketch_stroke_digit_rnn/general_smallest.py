@@ -418,7 +418,7 @@ for model_version in ['1', '2', '3', '4', '5']:
     print("YAY NEW MODEL", model_version)
     ccs = []
     tts = []
-    for i in range(10):
+    for i in range(5):
         print("repeataf", i)
         if model_version == '1': version = 1
         if model_version == '2': version = 2
@@ -435,7 +435,7 @@ for model_version in ['1', '2', '3', '4', '5']:
         model.load_state_dict(torch.load(model_path, map_location=torch.device('cpu')))
         model.eval()
 
-        for p in [i / 100 for i in range(0, 101, 5)]:
+        for p in [i / 100 for i in range(0, 101, 10)]:
             copy_model = copy.deepcopy(model)
             damage_smallest(copy_model, p)
 
